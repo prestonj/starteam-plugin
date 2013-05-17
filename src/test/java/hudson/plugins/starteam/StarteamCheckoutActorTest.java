@@ -78,6 +78,7 @@ public class StarteamCheckoutActorTest {
 		String projectName = System.getProperty("test.starteam.projectname", "NGBL");
 		String viewName = System.getProperty("test.starteam.viewname", "NGBL");
 		String folderName = System.getProperty("test.starteam.foldername", "NGBL/source/ant");
+                String destinationPath = System.getProperty("test.starteam.destinationpath", "");
 		String userName = System.getProperty("test.starteam.username", "");
 		String password = System.getProperty("test.starteam.password", "");
 		
@@ -91,7 +92,7 @@ public class StarteamCheckoutActorTest {
 		}
 		
 		AbstractBuild<?,?> build = null;
-		StarTeamCheckoutActor starTeamCheckoutActor =  new StarTeamCheckoutActor( hostName, port, userName, password, projectName, viewName, folderName, config, changeLogFilePath, listener, build, filePointsFilePath) ;
+		StarTeamCheckoutActor starTeamCheckoutActor =  new StarTeamCheckoutActor( hostName, port, userName, password, projectName, viewName, folderName, destinationPath, config, changeLogFilePath, listener, build, filePointsFilePath) ;
 
 		return starTeamCheckoutActor ;
 	}

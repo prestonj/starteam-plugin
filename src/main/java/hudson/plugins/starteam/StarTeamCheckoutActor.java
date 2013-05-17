@@ -43,6 +43,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 	private final String projectname;
 	private final String viewname;
 	private final String foldername;
+        private final String destinationpath;
 	private final StarTeamViewSelector config;
 	private final Collection<StarTeamFilePoint> historicFilePoints;
 	private final FilePath filePointFilePath;
@@ -65,6 +66,8 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 	 * 		starteam view name
 	 * @param foldername
 	 * 		starteam folder name
+         * @param destinationpath
+         *              relative to workspace path for checkout
 	 * @param config
 	 * 		configuration selector
 	 * @param changelogFile
@@ -74,7 +77,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 	 */
 	public StarTeamCheckoutActor(String hostname, int port, String user,
 			String passwd, String projectname, String viewname,
-			String foldername, StarTeamViewSelector config, FilePath changelogFile, BuildListener listener,
+			String foldername, String destinationpath, StarTeamViewSelector config, FilePath changelogFile, BuildListener listener,
 			AbstractBuild<?, ?> build, FilePath filePointFilePath ) {
 		this.hostname = hostname;
 		this.port = port;
@@ -83,6 +86,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 		this.projectname = projectname;
 		this.viewname = viewname;
 		this.foldername = foldername;
+                this.destinationpath = destinationpath;
 		this.changelog = changelogFile;
 		this.listener = listener;
 		this.config = config;
@@ -98,7 +102,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 		AbstractBuild<?, ?> lastBuild = (build == null) ? null : build.getPreviousBuild();
 		if (lastBuild != null){
 			try {
-				File filePointFile = new File(lastBuild.getRootDir(), StarTeamConnection.FILE_POINT_FILENAME);
+				File filePointFile = new File(new File(lastBuild.getRootDir(), destinationpath), StarTeamConnection.FILE_POINT_FILENAME);
 				if (filePointFile.exists()) {
 					historicFilePoints = StarTeamFilePointFunctions.loadCollection(filePointFile);
 				}
@@ -117,6 +121,9 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 	 */
 	public Boolean invoke(File workspace, VirtualChannel channel)
 			throws IOException {
+            
+                File localCheckoutPath = new File(workspace, this.destinationpath);
+                
 		StarTeamConnection connection = new StarTeamConnection(
 				hostname, port, user, passwd,
 				projectname, viewname, foldername, config);
@@ -132,7 +139,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 		StarTeamChangeSet changeSet;
 		try {
 			Folder rootFolder = connection.getRootFolder();
-			changeSet = connection.computeChangeSet(rootFolder,workspace,historicFilePoints,listener.getLogger());
+			changeSet = connection.computeChangeSet(rootFolder,localCheckoutPath,historicFilePoints,listener.getLogger());
 			// Check 'em out
 			listener.getLogger().println("performing checkout ...");
 
@@ -140,7 +147,7 @@ class StarTeamCheckoutActor implements FileCallable<Boolean>, Serializable {
 
 			listener.getLogger().println("creating change log file ");
 			try {
-				createChangeLog(changeSet, workspace, changelog, listener,
+				createChangeLog(changeSet, localCheckoutPath, changelog, listener,
 						connection);
 			} catch (InterruptedException e) {
 				listener.getLogger().println( "unable to create changelog file " +  e.getMessage()) ;

@@ -1,5 +1,6 @@
 package hudson.plugins.starteam;
 
+import hudson.FilePath;
 import hudson.model.Cause;
 import hudson.model.FreeStyleBuild;
 import hudson.model.FreeStyleProject;
@@ -32,7 +33,8 @@ public class StarTeamSCMTest extends HudsonTestCase {
 
 	private static final int LOG_LIMIT = 1000;
 	StarTeamSCM t;
-	String hostName = System.getProperty("test.starteam.hostname", "127.0.0.1");
+	/*
+        String hostName = System.getProperty("test.starteam.hostname", "127.0.0.1");
 	int port = Integer.parseInt(System.getProperty("test.starteam.hostport", "1")) ; 
 	String projectName = System.getProperty("test.starteam.projectname", "");
 	String viewName = System.getProperty("test.starteam.viewname", "");
@@ -43,12 +45,26 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	String promotionName = System.getProperty("test.starteam.promotionname", "hudsonPromotionState");
 	String changeDate = System.getProperty("test.starteam.changedate", "2010/7/14");
 	String testFile = System.getProperty("test.starteam.testfile", "");
+        String destinationPath = System.getProperty("test.starteam.destinationpath", "");
+        */
+        String hostName = System.getProperty("test.starteam.hostname", "207.181.118.237");
+	int port = Integer.parseInt(System.getProperty("test.starteam.hostport", "49201")) ; 
+	String projectName = System.getProperty("test.starteam.projectname", "projBelAir");
+	String viewName = System.getProperty("test.starteam.viewname", "projBelAir");
+	String folderName = System.getProperty("test.starteam.foldername", "projBelAir");
+	String userName = System.getProperty("test.starteam.username", "prestonj");
+	String password = System.getProperty("test.starteam.password", "mylix9304");
+	String labelName = System.getProperty("test.starteam.labelname", "hudsonTestLabel");
+	String promotionName = System.getProperty("test.starteam.promotionname", "hudsonPromotionState");
+	String changeDate = System.getProperty("test.starteam.changedate", "2010/7/14");
+	String testFile = System.getProperty("test.starteam.testfile", "testfile.txt");
+        String destinationPath = System.getProperty("test.starteam.destinationpath", "");
 
 
 	@Before
 	public void setUp() throws Exception {
 		super.setUp();
-		t = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, null, false) ;
+		t = new StarTeamSCM(hostName, port, projectName, viewName, folderName, destinationPath, userName, password, null, false) ;
 	}
 		
 	/**
@@ -58,12 +74,13 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	public void testConstructorStarTeamSCM()
 	{
 		    boolean promotionState = false;
-			StarTeamSCM t = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password,  labelName, promotionState) ;
+			StarTeamSCM t = new StarTeamSCM(hostName, port, projectName, viewName, folderName, destinationPath, userName, password,  labelName, promotionState) ;
 			assertEquals(hostName,t.getHostname());
 			assertEquals(port,t.getPort());
 			assertEquals(projectName,t.getProjectname());
 			assertEquals(viewName,t.getViewname());
 			assertEquals(folderName,t.getFoldername());
+                        assertEquals(destinationPath, t.getDestinationpath());
 			assertEquals(userName,t.getUsername());
 			assertEquals(password,t.getPassword());
 			assertEquals(labelName,t.getLabelname());
@@ -80,10 +97,12 @@ public class StarTeamSCMTest extends HudsonTestCase {
         FreeStyleProject p = createFreeStyleProject();
         p.setAssignedLabel(s.getSelfLabel());
         boolean promotionState = false;
-        p.setScm(new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password,  labelName, promotionState));
+        p.setScm(new StarTeamSCM(hostName, port, projectName, viewName, folderName, destinationPath, userName, password,  labelName, promotionState));
 
         FreeStyleBuild b = assertBuildStatusSuccess(p.scheduleBuild2(0, new Cause.UserCause()).get());
-        assertTrue(b.getWorkspace().child(testFile).exists());  // use a file that is in the root directory of your project
+        FilePath destPath = new FilePath(b.getWorkspace(), destinationPath);
+        
+        assertTrue(destPath.child(testFile).exists());  // use a file that is in the root directory of your project
         b = assertBuildStatusSuccess(p.scheduleBuild2(0).get());
     }
     
@@ -95,7 +114,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
     public void testConfigRoundtrip() throws Exception {
 	    boolean promotionState = false;
         FreeStyleProject project = createFreeStyleProject();
-        StarTeamSCM scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, labelName, promotionState) ;
+        StarTeamSCM scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, destinationPath, userName, password, labelName, promotionState) ;
         project.setScm(scm);
 
         // config roundtrip
@@ -103,10 +122,10 @@ public class StarTeamSCMTest extends HudsonTestCase {
 
         // verify that the data is intact
         assertEqualBeans(scm, project.getScm(),
-                "hostname,port,projectname,viewname,foldername,username,password,labelname,promotionstate");
+                "hostname,port,projectname,viewname,foldername,destinationpath,username,password,labelname,promotionstate");
         
         promotionState = true;
-        scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, promotionName, promotionState) ;
+        scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, destinationPath, userName, password, promotionName, promotionState) ;
         project.setScm(scm);
 
         // config roundtrip
@@ -114,7 +133,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
 
         // verify that the data is intact
         assertEqualBeans(scm, project.getScm(),
-                "hostname,port,projectname,viewname,foldername,username,password,labelname,promotionstate");
+                "hostname,port,projectname,viewname,foldername,destinationpath,username,password,labelname,promotionstate");
 
     }
 
@@ -126,7 +145,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
         // prepare with base label
         boolean promotionState = false;
         FreeStyleProject project = createFreeStyleProject();
-        StarTeamSCM scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, labelName, promotionState) ;
+        StarTeamSCM scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, destinationPath, userName, password, labelName, promotionState) ;
         project.setScm(scm);
         // config roundtrip
         submit(new WebClient().getPage(project,"configure").getFormByName("config"));
@@ -153,7 +172,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
         Assert.assertTrue("There should be no changes", changes.isEmptySet());
         
         // move to previous label
-        scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, labelName+"Before", promotionState) ;
+        scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, destinationPath, userName, password, labelName+"Before", promotionState) ;
         project.setScm(scm);
         submit(new WebClient().getPage(project,"configure").getFormByName("config"));
 
@@ -166,7 +185,7 @@ public class StarTeamSCMTest extends HudsonTestCase {
         Assert.assertFalse(commiters.isEmpty());
         
         // move to next label
-        scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, userName, password, labelName+"After", promotionState) ;
+        scm = new StarTeamSCM(hostName, port, projectName, viewName, folderName, destinationPath, userName, password, labelName+"After", promotionState) ;
         project.setScm(scm);
         submit(new WebClient().getPage(project,"configure").getFormByName("config"));
 
@@ -279,6 +298,11 @@ public class StarTeamSCMTest extends HudsonTestCase {
 	public void testGetFoldername() {
 		assertEquals(folderName,t.getFoldername());
 	}
+        
+        @Test
+        public void testGetDestinationpath() {
+            assertEquals(destinationPath, t.getDestinationpath());
+        }
 
 	/*
 	 * Get the username used to connect to starteam.

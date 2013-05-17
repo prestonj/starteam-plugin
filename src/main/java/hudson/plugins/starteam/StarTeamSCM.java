@@ -47,6 +47,7 @@ public class StarTeamSCM extends SCM {
 	private final String projectname;
 	private final String viewname;
 	private final String foldername;
+        private final String destinationpath;
 	private final String hostname;
 	private final int port;
 	private final String labelname;
@@ -68,6 +69,8 @@ public class StarTeamSCM extends SCM {
 	 *            name of the view
 	 * @param foldername
 	 *            parent folder name.
+         * @param destinationpath
+         *            the destination path, relative to workspace
 	 * @param username
 	 *            the user name required to connect to starteam's server
 	 * @param password
@@ -80,12 +83,14 @@ public class StarTeamSCM extends SCM {
 	 */
 	@DataBoundConstructor
 	public StarTeamSCM(String hostname, int port, String projectname,
-			String viewname, String foldername, String username, String password, String labelname, boolean promotionstate) {
+			String viewname, String foldername, String destinationpath,
+                        String username, String password, String labelname, boolean promotionstate) {
 		this.hostname = hostname;
 		this.port = port;
 		this.projectname = projectname;
 		this.viewname = viewname;
 		this.foldername = foldername;
+                this.destinationpath = destinationpath;
 		this.user = username;
 		this.passwd = password;
 		this.labelname = labelname;
@@ -122,12 +127,13 @@ public class StarTeamSCM extends SCM {
 	    FilePath changeLogFilePath = new FilePath( changelogFile ) ;
 	    
 	    //create a FilePath to be able to create the filePointFile
-	    FilePath filePointFilePath = new FilePath(new File(build.getRootDir(), StarTeamConnection.FILE_POINT_FILENAME));
+	    FilePath filePointFilePath = new FilePath(new File(new File(build.getRootDir(), destinationpath), StarTeamConnection.FILE_POINT_FILENAME));
 
 	    // Create an actor to do the checkout, possibly on a remote machine
 	    StarTeamCheckoutActor co_actor = new StarTeamCheckoutActor(hostname,
-	            port, user, passwd, projectname, viewname, foldername, config,
+	            port, user, passwd, projectname, viewname, foldername, destinationpath, config,
 	            changeLogFilePath, listener, build, filePointFilePath);
+            
 	    if (workspace.act(co_actor)) {
 	        // change log is written during checkout (only one pass for
 	        // comparison)
@@ -176,7 +182,7 @@ public class StarTeamSCM extends SCM {
 
 		Collection<StarTeamFilePoint> historicFilePoints = null;
 		if(lastBuild!=null){
-			File historicFilePointFile = new File(lastBuild.getRootDir(), StarTeamConnection.FILE_POINT_FILENAME);
+			File historicFilePointFile = new File(new File(lastBuild.getRootDir(), destinationpath), StarTeamConnection.FILE_POINT_FILENAME);
 			if(historicFilePointFile.exists()){
 				historicFilePoints = StarTeamFilePointFunctions.loadCollection(historicFilePointFile);
 			}
@@ -185,7 +191,7 @@ public class StarTeamSCM extends SCM {
 		// Create an actor to do the polling, possibly on a remote machine
 		StarTeamPollingActor p_actor = new StarTeamPollingActor(hostname, port,
 				user, passwd, projectname, viewname, foldername,
-				config, listener,
+				destinationpath, config, listener,
 				historicFilePoints);
 		if (workspace.act(p_actor)) {
 			status = true;
@@ -293,6 +299,15 @@ public class StarTeamSCM extends SCM {
 	public String getFoldername() {
 		return foldername;
 	}
+        
+        /**
+         * Get the destination path (relative to workspace).
+         * 
+         * @return The destination path
+         */
+        public String getDestinationpath() {
+                return destinationpath;
+        }
 
 	/**
 	 * Get the username used to connect to starteam.

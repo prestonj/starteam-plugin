@@ -39,6 +39,8 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 	private String viewname;
 
 	private String foldername;
+        
+        private String destinationpath;
 
 	private final TaskListener listener;
 
@@ -55,13 +57,14 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 	 * @param projectname starteam project name
 	 * @param viewname  starteam view name
 	 * @param foldername starteam parent folder name
+         * @param destinationpath relative to workspace
 	 * @param config configuration selector
 	 * @param listener Hudson task listener.
 	 * @param historicFilePoints  
 	 */
 	public StarTeamPollingActor(String hostname, int port, String user,
 			String passwd, String projectname, String viewname,
-			String foldername, StarTeamViewSelector config, TaskListener listener, Collection<StarTeamFilePoint> historicFilePoints) {
+			String foldername, String destinationpath, StarTeamViewSelector config, TaskListener listener, Collection<StarTeamFilePoint> historicFilePoints) {
 		this.hostname = hostname;
 		this.port = port;
 		this.user = user;
@@ -69,6 +72,7 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 		this.projectname = projectname;
 		this.viewname = viewname;
 		this.foldername = foldername;
+                this.destinationpath = destinationpath;
 		this.listener = listener;
 		this.config = config;
 		this.historicFilePoints=historicFilePoints;
@@ -80,8 +84,9 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 	 * @see hudson.FilePath.FileCallable#invoke(java.io.File,
 	 *      hudson.remoting.VirtualChannel)
 	 */
-	public Boolean invoke(File f, VirtualChannel channel) throws IOException {
+	public Boolean invoke(File workspace, VirtualChannel channel) throws IOException {
 
+                File localCheckoutPath = new File(workspace, destinationpath);
 		StarTeamConnection connection = new StarTeamConnection(
 				hostname, port, user, passwd,
 				projectname, viewname, foldername, config);
@@ -95,7 +100,7 @@ public class StarTeamPollingActor implements FileCallable<Boolean> {
 
 		StarTeamChangeSet changeSet = null;
 		try {
-			changeSet = connection.computeChangeSet(connection.getRootFolder(), f, historicFilePoints , listener.getLogger());
+			changeSet = connection.computeChangeSet(connection.getRootFolder(), localCheckoutPath, historicFilePoints , listener.getLogger());
 		} catch (StarTeamSCMException e) {
 			e.printStackTrace(listener.getLogger());
 		}
